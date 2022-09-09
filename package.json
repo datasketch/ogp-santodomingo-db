@@ -1,0 +1,36 @@
+{
+  "name": "ogp-santodomingo-db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "pull": "node scripts/pull",
+    "insert": "node scripts/insert"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/datasketch/ogp-santodomingo-db.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/datasketch/ogp-santodomingo-db/issues"
+  },
+  "homepage": "https://github.com/datasketch/ogp-santodomingo-db#readme",
+  "dependencies": {
+    "airtable": "^0.11.4",
+    "dotenv": "^16.0.2",
+    "install": "^0.13.0",
+    "knex": "^2.3.0",
+    "npm": "^8.19.1",
+    "pg": "^8.8.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.23.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.5",
+    "eslint-plugin-promise": "^6.0.1"
+  }
+}
