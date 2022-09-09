@@ -2,15 +2,15 @@
 set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    DROP DATABASE IF EXISTS "sd_denuncias";
+    DROP TABLE IF EXISTS "sd_denuncias";
 
-    create database "sd_denuncias";
+    CREATE DATABASE "sd_denuncias";
 
     \c sd_denuncias
 
-    drop table if exists "public"."denuncias";
+    DROP TABLE IF EXISTS "public"."denuncias";
 
-    create table "public"."denuncias" (
+    CREATE TABLE "public"."denuncias" (
         "id" SERIAL PRIMARY KEY,
         "created_at" TIMESTAMPTZ default CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMPTZ default CURRENT_TIMESTAMP,
@@ -36,17 +36,17 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         "Ubicacion" text
     );
 
-    drop database if exists "sd_plantas";
+    DROP DATABASE IF EXISTS "sd_plantas";
 
-    create database "sd_plantas";
+    CREATE DATABASE "sd_plantas";
 
     \c sd_plantas
 
-    drop table if exists "public"."plantas_en_desarrollo";
+    DROP TABLE IF EXISTS "public"."plantas_en_desarrollo";
 
-    create sequence if not exists plantas_en_desarrollo_orden_seq;
+    CREATE SEQUENCE IF NOT EXISTS plantas_en_desarrollo_orden_seq;
 
-    create table "public"."plantas" (
+    CREATE TABLE "public"."plantas" (
         "id" SERIAL primary key,
         "Planta" text not null,
         "Tipo" text,
@@ -55,7 +55,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         "updated_at" TIMESTAMPTZ default CURRENT_TIMESTAMP
     );
 
-    create table "public"."plantas_en_desarrollo" (
+    CREATE TABLE "public"."plantas_en_desarrollo" (
         "id" SERIAL primary key,
         "Orden" INTEGER not null default nextval('plantas_en_desarrollo_orden_seq'::regclass),
         "Estado vivero" text,
@@ -66,5 +66,62 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         "created_at" TIMESTAMPTZ default CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMPTZ default CURRENT_TIMESTAMP,
         constraint fk_planta foreign key("Planta") references plantas(id)
+    );
+
+    CREATE VIEW ordenes_de_compra AS (
+    SELECT
+        CONCAT(EXTRACT(YEAR FROM ped."Fecha de entrega"), '-', p."Planta", '-#', ped."Orden") "Ordenes de compra",
+        ped."Orden",
+        (
+            CASE WHEN ped."Fecha de entrega" < CURRENT_DATE THEN
+                "Cantidad"
+            ELSE
+                0
+            END) AS "Unidades preparadas",
+        ped."Estado vivero",
+        p."Planta",
+        ped."Cantidad",
+        ped."Fecha transplante",
+        ped."Fecha de entrega"
+    FROM
+        plantas_en_desarrollo ped
+        JOIN plantas p ON p.id = ped."Planta"
+    ORDER BY ped."Orden"
+    );
+
+    CREATE VIEW AS inventario (
+    SELECT
+        p. "Planta",
+        p. "Tipo",
+        p. "Contenedor",
+        SUM(
+            CASE WHEN odc. "Estado vivero" = 'Unidades trasplantadas' THEN
+                odc. "Unidades preparadas"
+            ELSE
+                0
+            END) AS "Unidades trasplantadas",
+        SUM(
+            CASE WHEN odc. "Estado vivero" = 'Creciendo' THEN
+                odc. "Unidades preparadas"
+            ELSE
+                0
+            END) AS "Unidades creciendo",
+        SUM(
+            CASE WHEN odc. "Estado vivero" = 'Lista para entrega' THEN
+                odc. "Unidades preparadas"
+            ELSE
+                0
+            END) AS "Unidades listas para entrega"
+    FROM
+        plantas p
+        JOIN plantas_en_desarrollo ped ON p.id = ped. "Planta"
+        JOIN ordenes_de_compra odc ON ped. "Orden" = odc. "Orden"
+    GROUP BY
+        (p. "Planta",
+            p. "Tipo",
+            p. "Contenedor",
+            odc. "Orden")
+    ORDER BY
+        p. "Planta"
     );
 EOSQL
