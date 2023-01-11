@@ -34,7 +34,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         "Nombre del denunciado" TEXT,
         "Descripcion del acto que se denuncia" TEXT,
         "Ubicacion" TEXT,
-        "Fuente" TEXT
+        "Fuente" TEXT,
+        "Actividad denunciada" TEXT
     );
 
     DROP DATABASE IF EXISTS "sd_plantas";
